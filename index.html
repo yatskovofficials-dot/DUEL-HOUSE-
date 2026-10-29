@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DUEL HOUSE // ARENA</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap');
+:root{--cyan:#56dfff;--red:#ff526d;--gold:#ffc66d}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#070a12;color:#f3f7ff;font-family:Inter,Arial}
+#view{position:fixed;inset:0}canvas{display:block}
+#vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 35%,#03060dbb 100%)}
+.hud{position:fixed;inset:0;pointer-events:none}
+.top{position:absolute;top:16px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:12px;width:min(920px,96vw)}
+.player{flex:1;min-width:0;padding:11px 14px;border-radius:13px;background:linear-gradient(120deg,#0b1422dd,#111a2bdd);border:1px solid #ffffff24;box-shadow:0 8px 30px #0008;backdrop-filter:blur(10px)}
+.player.p2{text-align:right}.tag{font:800 10px Orbitron;letter-spacing:1.4px;color:#a8bed4}.p2 .tag{color:#ff9cab}
+.health{height:9px;border-radius:20px;background:#273347;margin-top:7px;overflow:hidden}.health i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#04a9ed,#8ef3ff);box-shadow:0 0 16px #35cfff;transition:width .15s}.p2 .health i{background:linear-gradient(90deg,#ff405f,#ffb36a);box-shadow:0 0 16px #ff526d}
+.hpnum{font:700 11px Orbitron;color:#eaf5ff;margin-top:5px}.score{font:900 21px Orbitron;white-space:nowrap;text-shadow:0 0 16px #48caff}.score small{color:#91a4ba;font-size:10px}
+.bossbar{position:absolute;top:95px;left:50%;transform:translateX(-50%);width:min(560px,80vw);display:none;text-align:center}.bossname{font:900 12px Orbitron;letter-spacing:3px;color:#ffb36a;text-shadow:0 0 14px #ff4b44}.bosshealth{height:11px;background:#271922;border:1px solid #ff8a7355;border-radius:20px;overflow:hidden;margin-top:7px}.bosshealth i{display:block;width:100%;height:100%;background:linear-gradient(90deg,#ff354e,#ffbd68);box-shadow:0 0 18px #ff3c50}
+.bottom{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:8px;align-items:center;max-width:96vw;flex-wrap:wrap;justify-content:center}
+.pill{background:#080f1bdc;border:1px solid #ffffff20;border-radius:10px;padding:8px 11px;font-size:11px;color:#bdcadd;backdrop-filter:blur(8px)}.pill b{font:800 10px Orbitron;color:#fff}.cyan{color:var(--cyan)!important}.red{color:var(--red)!important}
+#toast{position:absolute;top:25%;left:50%;transform:translateX(-50%);font:900 clamp(17px,3vw,30px) Orbitron;letter-spacing:2px;text-align:center;text-shadow:0 5px 25px #000;white-space:pre-line}
+#crosshair{position:absolute;left:50%;top:50%;width:24px;height:24px;transform:translate(-50%,-50%);opacity:.35}
+#crosshair:before,#crosshair:after{content:"";position:absolute;background:#d9f7ff;box-shadow:0 0 8px #50dfff}#crosshair:before{width:2px;height:24px;left:11px}#crosshair:after{height:2px;width:24px;top:11px}
+#menu{position:fixed;inset:0;z-index:9;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 45%,#16263beF,#05070df7 70%)}
+.card{width:min(760px,94vw);padding:clamp(20px,4vw,38px);border-radius:23px;background:linear-gradient(145deg,#142338f5,#080e19f7);border:1px solid #5cdcff55;box-shadow:0 25px 100px #000c,0 0 65px #167dba22;text-align:center}
+.logo{font:900 clamp(28px,6vw,54px) Orbitron;letter-spacing:2px;line-height:1.05}.logo span{color:var(--cyan);text-shadow:0 0 28px #28bfff}.eyebrow{font:700 10px Orbitron;letter-spacing:4px;color:#8ca5c1;margin-bottom:12px}.desc{color:#9eb0c7;font-size:13px;line-height:1.6;margin:12px auto 20px;max-width:560px}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0}.mode{padding:15px;text-align:left;border:1px solid #ffffff20;background:#ffffff08;border-radius:13px}.mode strong{font:800 12px Orbitron;color:#d9f5ff}.mode p{font-size:11px;color:#9aaec5;line-height:1.5;margin:7px 0 0}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:left}.ctrl{padding:13px;background:#ffffff08;border:1px solid #ffffff17;border-radius:12px;font-size:11px;line-height:1.9;color:#b8c7d9}.ctrl b{font:800 10px Orbitron;color:var(--cyan)}.ctrl:last-child b{color:#ff8196}
+button{border:0;border-radius:11px;padding:14px 28px;background:linear-gradient(100deg,#00a9ef,#655cff);color:white;font:900 12px Orbitron;letter-spacing:1.5px;cursor:pointer;box-shadow:0 8px 30px #167bff55;transition:.18s}button:hover{filter:brightness(1.2);transform:translateY(-2px)}.foot{font-size:10px;color:#657a95;margin-top:14px}
+@media(max-width:600px){.top{top:7px;gap:5px}.player{padding:8px}.tag{font-size:8px}.score{font-size:16px}.bossbar{top:78px}.bottom{bottom:5px}.pill{padding:6px;font-size:9px}.modes,.controls{grid-template-columns:1fr}}
+</style></head><body>
+<div id="view"></div><div id="vignette"></div>
+<div class="hud">
+ <div class="top">
+  <div class="player"><div class="tag">01 / PHANTOM <span class="cyan">◆</span></div><div class="health"><i id="hp1"></i></div><div class="hpnum" id="hpv1">100 / 100</div></div>
+  <div class="score"><span id="s1">0</span><small> : </small><span id="s2">0</span></div>
+  <div class="player p2"><div class="tag">02 / REAPER <span class="red">◆</span></div><div class="health"><i id="hp2"></i></div><div class="hpnum" id="hpv2">100 / 100</div></div>
+ </div>
+ <div class="bossbar" id="bossbar"><div class="bossname">☠ TITAN — ARENA BOSS ☠</div><div class="bosshealth"><i id="bosshp"></i></div></div>
+ <div id="toast"></div><div id="crosshair"></div>
+ <div class="bottom">
+  <div class="pill">P1 <b class="cyan" id="w1">PULSE</b> <b>Q/E</b> ·召喚 <b>T</b></div>
+  <div class="pill">P2 <b class="red" id="w2">PULSE</b> <b>[ / ]</b> ·召喚 <b>M</b></div>
+  <div class="pill">ДО 5 ПОБЕД · <b>ESC</b> МЕНЮ</div>
+ </div>
+</div>
+<div id="menu"><div class="card">
+ <div class="eyebrow">LOCAL MULTIPLAYER · DESTRUCTION ENGINE</div>
+ <div class="logo">DUEL HOUSE <span>3D</span></div>
+ <div class="desc">Тактическая арена с разрушаемым окружением, арсеналом и боссами. Два игрока. Одна клавиатура. Никаких компромиссов.</div>
+ <div class="modes">
+  <div class="mode"><strong>⚔ DUEL MODE</strong><p>Сражение 1 на 1. Используй укрытия, оружие и ближние атаки. Победа до пяти раундов.</p></div>
+  <div class="mode"><strong>☠ BOSS INVASION</strong><p>Вызови Титана клавишей T или M. Босс атакует обоих игроков — бейте его вместе или используй хаос в свою пользу.</p></div>
+ </div>
+ <div class="controls">
+  <div class="ctrl"><b>PLAYER 01 / CYAN</b><br>W A S D — движение<br>SPACE — прыжок · F — огонь<br>G — удар · Q/E — оружие<br>T — призвать босса</div>
+  <div class="ctrl"><b>PLAYER 02 / CRIMSON</b><br>Стрелки — движение<br>Right Shift — прыжок · Enter — огонь<br>. — удар · [ / ] — оружие<br>M — призвать босса</div>
+ </div>
+ <div style="margin-top:20px"><button id="play">ENTER THE ARENA</button></div>
+ <div class="foot">DESIGNED FOR DESKTOP · TWO PLAYERS · INTERNET REQUIRED FOR THREE.JS CDN</div>
+</div></div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+const el=document.querySelector('#view'), scene=new THREE.Scene();scene.background=new THREE.Color(0x090f1b);scene.fog=new THREE.FogExp2(0x0a1220,.025);
+const camera=new THREE.PerspectiveCamera(48,innerWidth/innerHeight,.1,100);camera.position.set(0,20,25);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.35;el.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0x9fcfff,0x171c2c,1.5));
+const keyLight=new THREE.DirectionalLight(0xd6eaff,3.2);keyLight.position.set(-8,18,10);keyLight.castShadow=true;keyLight.shadow.mapSize.set(2048,2048);Object.assign(keyLight.shadow.camera,{left:-22,right:22,top:22,bottom:-22});scene.add(keyLight);
+const cyanLight=new THREE.PointLight(0x12bfff,35,18);cyanLight.position.set(-8,4,0);scene.add(cyanLight);
+const redLight=new THREE.PointLight(0xff315e,35,18);redLight.position.set(8,4,0);scene.add(redLight);
+const mat=(c,rough=.7,metal=0,em=0)=>new THREE.MeshStandardMaterial({color:c,roughness:rough,metalness:metal,emissive:c,emissiveIntensity:em});
+const floorMat=mat(0x1a2638,.95), wallMat=mat(0x52657c,.8,.25), darkMat=mat(0x111a2a,.6,.4), woodMat=mat(0x78533d,.85), metalMat=mat(0x536b83,.35,.8), glassMat=new THREE.MeshPhysicalMaterial({color:0x51c9ff,transparent:true,opacity:.23,metalness:.3,roughness:.1});
+function cube(x,y,z,sx,sy,sz,m,cast=true){let o=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),m);o.position.set(x,y,z);o.castShadow=cast;o.receiveShadow=true;scene.add(o);return o}
+cube(0,-.45,0,34,.8,28,floorMat);
+let grid=new THREE.GridHelper(34,34,0x376080,0x26394f);grid.position.y=-.035;scene.add(grid);
+// perimeter architecture, split walls
+let blocks=[], destruct=[];
+function addBlock(x,z,sx,sz,sy,m,breakable=false,hp=3){let mesh=cube(x,sy/2,z,sx,sy,sz,m);let b={x,z,sx,sz,sy,mesh,breakable,hp};blocks.push(b);if(breakable)destruct.push(b);return b}
+function line(x1,z1,x2,z2){let dx=x2-x1,dz=z2-z1,len=Math.hypot(dx,dz),n=Math.ceil(len/2.7);for(let i=0;i<n;i++){let t=(i+.5)/n;addBlock(x1+dx*t,z1+dz*t,Math.abs(dx)<.01?.55:len/n,Math.abs(dx)<.01?len/n:.55,3,wallMat,true,5)}}
+line(-10,-8,10,-8);line(-10,8,10,8);line(-10,-8,-10,8);line(10,-8,10,8);
+line(-2.5,-8,-2.5,-3);line(-2.5,2,-2.5,8);line(3,-8,3,-3);line(3,2,3,8);
+// styled interior walls / pillars
+for(let [x,z] of [[-7,-5],[7,-5],[-7,5],[7,5],[0,-6],[0,6]]){let p=cube(x,1.5,z,.65,3,.65,metalMat);let glow=cube(x,2.8,z,.72,.08,.72,mat(0x31bfff,.3,.2,2));}
+const furniture=[];
+function crate(x,z,sx,sz,sy=1.2,m=woodMat){let b=addBlock(x,z,sx,sz,sy,m,true,3);furniture.push(b);return b}
+crate(-6,-2,2.4,1.2,1.1);crate(6,2,2.4,1.2,1.1);crate(0,0,2.3,1.5,1.4,metalMat);crate(-5,4,1.3,2,1.5);crate(5,-4,1.3,2,1.5);crate(-7,1,1.3,1.3,.9,metalMat);crate(7,-1,1.3,1.3,.9,metalMat);
+// decorative neon strips and overhead trusses
+for(let z of [-8.35,8.35]){let strip=cube(0,3.05,z,20,.09,.13,mat(0x22bfff,.25,.2,2),false)}
+for(let x of [-9.7,9.7])cube(x,3.1,0,.12,.12,16,mat(0xff416d,.2,.1,2),false);
+for(let x=-8;x<=8;x+=4){let l=new THREE.PointLight(x<0?0x1bafff:0xff3d67,12,9);l.position.set(x,3.5,0);scene.add(l)}
+// exterior vents / cover blocks
+for(let i=0;i<10;i++){let x=-9+i*2;cube(x,.16,-10.3,1.4,.32,.6,i%2?woodMat:metalMat);cube(x,.16,10.3,1.4,.32,.6,i%2?metalMat:woodMat)}
+const weapons=[
+{name:'PULSE',damage:11,rate:190,speed:25,spread:.025,count:1,color:0x66e8ff},
+{name:'SCATTER',damage:7,rate:600,speed:19,spread:.23,count:7,color:0xffd17a},
+{name:'RAIL',damage:31,rate:780,speed:45,spread:0,count:1,color:0xc5a0ff},
+{name:'RPG',damage:38,rate:950,speed:13,spread:.012,count:1,color:0xff795d},
+{name:'ARC',damage:18,rate:440,speed:20,spread:.08,count:3,color:0x80ffbc}
+];
+function fighter(x,z,color,controls){let g=new THREE.Group();scene.add(g);let armor=mat(color,.28,.6,.28),body=new THREE.Mesh(new THREE.CapsuleGeometry(.46,.82,6,12),armor);body.position.y=.9;body.castShadow=true;g.add(body);let head=new THREE.Mesh(new THREE.SphereGeometry(.31,18,14),mat(0xcbd8e8,.3,.45));head.position.y=1.62;g.add(head);let visor=new THREE.Mesh(new THREE.BoxGeometry(.44,.12,.13),new THREE.MeshBasicMaterial({color}));visor.position.set(0,1.66,.27);g.add(visor);let shoulder=new THREE.Mesh(new THREE.BoxGeometry(1.12,.22,.42),armor);shoulder.position.y=1.23;g.add(shoulder);let ring=new THREE.Mesh(new THREE.TorusGeometry(.59,.025,8,32),new THREE.MeshBasicMaterial({color}));ring.rotation.x=Math.PI/2;ring.position.y=.035;g.add(ring);let glow=new THREE.PointLight(color,1.2,3);glow.position.y=1.2;g.add(glow);g.position.set(x,0,z);return {g,body,hp:100,score:0,weapon:0,dir:new THREE.Vector3(0,0,1),vy:0,ground:true,lastShot:0,lastMelee:0,hit:0,controls,prev:false,next:false,alive:true}}
+const p1=fighter(-7,0,0x16bfff,{u:'KeyW',d:'KeyS',l:'KeyA',r:'KeyD',fire:'KeyF',jump:'Space',melee:'KeyG',prev:'KeyQ',next:'KeyE',boss:'KeyT'});
+const p2=fighter(7,0,0xff3e63,{u:'ArrowUp',d:'ArrowDown',l:'ArrowLeft',r:'ArrowRight',fire:'Enter',jump:'ShiftRight',melee:'Period',prev:'BracketLeft',next:'BracketRight',boss:'KeyM'});
+const keys={};addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();if(e.code==='Escape')document.querySelector('#menu').style.display='grid'});addEventListener('keyup',e=>keys[e.code]=false);
+let shots=[],fx=[],boss=null,started=false,roundOver=false,roundTime=0,shake=0;
+function burst(pos,color,n=12,power=4){for(let i=0;i<n;i++){let mesh=new THREE.Mesh(new THREE.IcosahedronGeometry(.045+Math.random()*.065,0),new THREE.MeshBasicMaterial({color,transparent:true}));mesh.position.copy(pos);scene.add(mesh);fx.push({mesh,v:new THREE.Vector3((Math.random()-.5)*power,Math.random()*power,(Math.random()-.5)*power),life:.35+Math.random()*.55})}}
+function obstacleAt(x,z,r=.5){if(Math.abs(x)>16||Math.abs(z)>12.5)return true;for(let b of blocks){if(!b.mesh.visible)continue;if(x+r>b.x-b.sx/2&&x-r<b.x+b.sx/2&&z+r>b.z-b.sz/2&&z-r<b.z+b.sz/2)return true}return false}
+function breakBlock(b,color){b.hp--;burst(b.mesh.position,color,10,3);if(b.hp<=0){let pos=b.mesh.position.clone();scene.remove(b.mesh);b.mesh.visible=false;for(let i=0;i<9;i++){let shard=cube(pos.x+(Math.random()-.5)*b.sx,pos.y+(Math.random()-.5)*b.sy,pos.z+(Math.random()-.5)*b.sz,.13,.13,.13,mat(0x8292a5,.8));shard.rotation.set(Math.random()*3,Math.random()*3,Math.random()*3);fx.push({mesh:shard,v:new THREE.Vector3((Math.random()-.5)*6,Math.random()*5,(Math.random()-.5)*6),life:1.2,shard:true})}}}
+function shoot(p,now){let w=weapons[p.weapon];if(now-p.lastShot<w.rate)return;p.lastShot=now;for(let i=0;i<w.count;i++){let d=p.dir.clone().applyAxisAngle(new THREE.Vector3(0,1,0),(Math.random()-.5)*w.spread).normalize();let rocket=w.name==='RPG';let mesh=new THREE.Mesh(rocket?new THREE.SphereGeometry(.17,12,10):new THREE.SphereGeometry(.075,9,7),new THREE.MeshBasicMaterial({color:w.color}));mesh.position.copy(p.g.position).add(new THREE.Vector3(0,1.2,0)).addScaledVector(d,.75);scene.add(mesh);shots.push({mesh,v:d.multiplyScalar(w.speed),owner:p,damage:w.damage,life:2,rocket,color:w.color})}burst(p.g.position.clone().add(new THREE.Vector3(0,1.2,0)),w.color,3,1)}
+function hurt(p,dmg,color){if(p.hp<=0)return;p.hp=Math.max(0,p.hp-dmg);p.hit=.22;shake=.18;burst(p.g.position.clone().add(new THREE.Vector3(0,1,0)),color,12,4);if(p.hp===0){let win=p===p1?p2:p1;win.score++;roundOver=true;roundTime=2.5;document.querySelector('#toast').textContent=(win===p1?'PHANTOM':'REAPER')+' WINS';}}
+function melee(p,q,now){if(now-p.lastMelee<520)return;p.lastMelee=now;let d=q.g.position.clone().sub(p.g.position);if(d.length()<1.8&&p.dir.dot(d.normalize())>.0){hurt(q,20,p===p1?0x23cfff:0xff4667);burst(q.g.position,0xffffff,7,3)}}
+function spawnBoss(){if(boss){document.querySelector('#toast').textContent='ТИТАН УЖЕ В АРЕНЕ';return}let g=new THREE.Group();scene.add(g);let core=new THREE.Mesh(new THREE.IcosahedronGeometry(1.05,1),mat(0x771c37,.25,.7,.8));core.position.y=1.6;g.add(core);let head=new THREE.Mesh(new THREE.IcosahedronGeometry(.55,1),mat(0xff5c4e,.25,.5,1));head.position.y=2.8;g.add(head);for(let s of [-1,1]){let arm=new THREE.Mesh(new THREE.CapsuleGeometry(.28,.9,5,10),mat(0x39233c,.35,.6,.4));arm.position.set(s*1.15,1.6,0);arm.rotation.z=s*.35;g.add(arm);let horn=new THREE.Mesh(new THREE.ConeGeometry(.18,.7,8),mat(0xffa15b,.3,.4,1));horn.position.set(s*.38,3.35,0);horn.rotation.z=s*.25;g.add(horn)}let aura=new THREE.Mesh(new THREE.TorusGeometry(1.55,.09,10,40),new THREE.MeshBasicMaterial({color:0xff4b58}));aura.rotation.x=Math.PI/2;aura.position.y=.15;g.add(aura);let light=new THREE.PointLight(0xff3155,5,10);light.position.y=2;g.add(light);g.position.set(0,0,-1);boss={g,hp:600,max:600,lastAttack:0,lastMove:0,phase:0};document.querySelector('#bossbar').style.display='block';document.querySelector('#toast').textContent='☠ TITAN SUMMONED ☠';setTimeout(()=>{if(document.querySelector('#toast').textContent.includes('TITAN'))document.querySelector('#toast').textContent=''},1600)}
+function bossAttack(now){if(!boss||now-boss.lastAttack<1250)return;boss.lastAttack=now;let targets=[p1,p2].filter(p=>p.hp>0);if(!targets.length)return;let t=targets[Math.floor(Math.random()*targets.length)],d=t.g.position.clone().sub(boss.g.position);d.y=0;d.normalize();let mesh=new THREE.Mesh(new THREE.SphereGeometry(.23,12,10),new THREE.MeshBasicMaterial({color:0xff4c5e}));mesh.position.copy(boss.g.position).add(new THREE.Vector3(0,1.8,0));scene.add(mesh);shots.push({mesh,v:d.multiplyScalar(11),owner:boss,damage:16,life:3,rocket:true,color:0xff4c5e,bossShot:true});burst(boss.g.position.clone().add(new THREE.Vector3(0,2,0)),0xff5c66,8,2)}
+function updateBoss(dt,now){if(!boss)return;let target=[p1,p2].filter(p=>p.hp>0).sort((a,b)=>a.g.position.distanceTo(boss.g.position)-b.g.position.distanceTo(boss.g.position))[0];if(target){let d=target.g.position.clone().sub(boss.g.position);d.y=0;if(d.length()>2.8){d.normalize();let nx=boss.g.position.x+d.x*2*dt,nz=boss.g.position.z+d.z*2*dt;if(!obstacleAt(nx,boss.g.position.z,.9))boss.g.position.x=nx;if(!obstacleAt(boss.g.position.x,nz,.9))boss.g.position.z=nz}boss.g.rotation.y=Math.atan2(d.x,d.z)}boss.g.children[0].rotation.y+=dt*1.2;boss.g.children[1].rotation.y-=dt*1.8;bossAttack(now)}
+function bossDamage(dmg,color){if(!boss)return;boss.hp=Math.max(0,boss.hp-dmg);burst(boss.g.position.clone().add(new THREE.Vector3(0,1.8,0)),color,8,3);document.querySelector('#bosshp').style.width=(boss.hp/boss.max*100)+'%';if(boss.hp<=0){burst(boss.g.position.clone().add(new THREE.Vector3(0,1.5,0)),0xffb65d,65,9);scene.remove(boss.g);boss=null;document.querySelector('#bossbar').style.display='none';document.querySelector('#toast').textContent='TITAN DEFEATED';setTimeout(()=>{if(document.querySelector('#toast').textContent==='TITAN DEFEATED')document.querySelector('#toast').textContent=''},2200)}}
+function updatePlayer(p,q,dt,now){if(p.hp<=0)return;let c=p.controls,dx=(keys[c.r]?1:0)-(keys[c.l]?1:0),dz=(keys[c.d]?1:0)-(keys[c.u]?1:0);let v=new THREE.Vector3(dx,0,dz);if(v.lengthSq()){v.normalize();p.dir.copy(v);let speed=6.7,nx=p.g.position.x+v.x*speed*dt,nz=p.g.position.z+v.z*speed*dt;if(!obstacleAt(nx,p.g.position.z))p.g.position.x=nx;if(!obstacleAt(p.g.position.x,nz))p.g.position.z=nz;p.g.rotation.y=Math.atan2(v.x,v.z);p.body.rotation.z=-dx*.08;p.body.rotation.x=dz*.06}
+if(keys[c.jump]&&p.ground){p.vy=8;p.ground=false}p.vy-=19*dt;p.g.position.y+=p.vy*dt;if(p.g.position.y<=0){p.g.position.y=0;p.vy=0;p.ground=true}
+if(keys[c.fire])shoot(p,now);if(keys[c.melee])melee(p,q,now);if(keys[c.prev]&&!p.prev)p.weapon=(p.weapon+weapons.length-1)%weapons.length;if(keys[c.next]&&!p.next)p.weapon=(p.weapon+1)%weapons.length;p.prev=!!keys[c.prev];p.next=!!keys[c.next];if(keys[c.boss]&&!p.bossHeld)spawnBoss();p.bossHeld=!!keys[c.boss];p.body.material.emissiveIntensity=p.hit>0?.8:.28;p.hit=Math.max(0,p.hit-dt)}
+function resetRound(){for(let p of [p1,p2]){p.hp=100;p.g.position.set(p===p1?-7:7,0,0);p.weapon=0;p.vy=0}shots.forEach(s=>scene.remove(s.mesh));shots=[];roundOver=false;document.querySelector('#toast').textContent=''}
+function update(dt,now){if(!started)return;if(roundOver){roundTime-=dt;if(roundTime<=0){if(p1.score>=5||p2.score>=5){document.querySelector('#toast').textContent=(p1.score>=5?'PHANTOM':'REAPER')+' — MATCH CHAMPION';setTimeout(()=>{p1.score=p2.score=0;resetRound()},2300)}else resetRound();}return}
+updatePlayer(p1,p2,dt,now);updatePlayer(p2,p1,dt,now);updateBoss(dt,now);
+for(let i=shots.length-1;i>=0;i--){let s=shots[i];s.mesh.position.addScaledVector(s.v,dt);s.life-=dt;let remove=false;
+if(s.owner===boss){for(let p of [p1,p2])if(p.hp>0&&s.mesh.position.distanceTo(p.g.position.clone().add(new THREE.Vector3(0,1,0)))<.75){hurt(p,s.damage,s.color);remove=true;break}}
+else{if(boss&&s.mesh.position.distanceTo(boss.g.position.clone().add(new THREE.Vector3(0,1.5,0)))<1.35){bossDamage(s.damage,s.color);remove=true}
+let target=s.owner===p1?p2:p1;if(!remove&&target.hp>0&&s.mesh.position.distanceTo(target.g.position.clone().add(new THREE.Vector3(0,1,0)))<.68){hurt(target,s.damage,s.color);remove=true}}
+if(!remove){for(let b of blocks){if(b.mesh.visible&&Math.abs(s.mesh.position.x-b.x)<b.sx/2+.15&&Math.abs(s.mesh.position.z-b.z)<b.sz/2+.15&&s.mesh.position.y<b.sy+.25){if(b.breakable)breakBlock(b,s.color);remove=true;break}}}
+if(s.rocket&&(remove||s.life<=0)){burst(s.mesh.position,s.color,22,6);shake=.3}if(remove||s.life<=0){scene.remove(s.mesh);shots.splice(i,1)}}
+for(let i=fx.length-1;i>=0;i--){let f=fx[i];f.life-=dt;f.mesh.position.addScaledVector(f.v,dt);f.v.y-=f.shard?12:8*dt;if(f.mesh.material.transparent)f.mesh.material.opacity=Math.max(0,f.life);if(f.life<=0){scene.remove(f.mesh);fx.splice(i,1)}}
+for(let [p,n] of [[p1,1],[p2,2]]){document.querySelector('#hp'+n).style.width=p.hp+'%';document.querySelector('#hpv'+n).textContent=p.hp+' / 100';document.querySelector('#w'+n).textContent=weapons[p.weapon].name}document.querySelector('#s1').textContent=p1.score;document.querySelector('#s2').textContent=p2.score;
+}
+let last=performance.now();function loop(now){requestAnimationFrame(loop);let dt=Math.min((now-last)/1000,.035);last=now;update(dt,now);let mid=p1.g.position.clone().add(p2.g.position).multiplyScalar(.5);if(boss)mid.lerp(boss.g.position,.18);let targetX=mid.x*.18;camera.position.x+=(targetX-camera.position.x)*dt*1.4;camera.position.z+=(24-camera.position.z)*dt*1.3;camera.lookAt(mid.x*.25,0,mid.z*.2);if(shake>0){camera.position.x+=(Math.random()-.5)*shake;camera.position.y=20+(Math.random()-.5)*shake;shake=Math.max(0,shake-dt)}renderer.render(scene,camera)}requestAnimationFrame(loop);
+document.querySelector('#play').onclick=()=>{started=true;document.querySelector('#menu').style.display='none';resetRound()};
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+</script></body></html>
